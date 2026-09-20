@@ -6,31 +6,24 @@
   <meta name="theme-color" content="#0f172a" />
   <title>CleanLabel Food Scanner</title>
   <link rel="manifest" href="manifest.json" />
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='b' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23064e3b'/%3E%3Cstop offset='50%25' stop-color='%23047857'/%3E%3Cstop offset='100%25' stop-color='%230f172a'/%3E%3C/linearGradient%3E%3ClinearGradient id='a' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23fb7185'/%3E%3Cstop offset='40%25' stop-color='%23f43f5e'/%3E%3Cstop offset='100%25' stop-color='%23be123c'/%3E%3C/linearGradient%3E%3ClinearGradient id='c' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23fef08a'/%3E%3Cstop offset='100%25' stop-color='%23ca8a04'/%3E%3C/linearGradient%3E%3ClinearGradient id='l' x1='0%25' y1='0%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' stop-color='%2338bdf8' stop-opacity='0'/%3E%3Cstop offset='50%25' stop-color='%23fff'/%3E%3Cstop offset='100%25' stop-color='%2338bdf8' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='512' height='512' rx='115' fill='url(%23b)'/%3E%3Ccircle cx='256' cy='245' r='160' fill='%23065f46' fill-opacity='.35' stroke='%2334d399' stroke-width='4' stroke-dasharray='8 6'/%3E%3Ccircle cx='295' cy='275' r='75' fill='url(%23c)'/%3E%3Cpath d='M215 190c20 0 35 15 40 25 5-10 20-25 40-25 50 0 70 50 60 105-10 50-50 60-90 55-7-1-13-1-20 0-40 5-80-5-90-55-10-55 10-105 60-105z' fill='url(%23a)'/%3E%3Cellipse cx='200' cy='240' rx='20' ry='38' transform='rotate(-25 200 240)' fill='%23fff' fill-opacity='.28'/%3E%3Cpath d='M255 210c0-25 13-40 23-50' stroke='%2378350f' stroke-width='7' stroke-linecap='round' fill='none'/%3E%3Cpath d='M255 185c-25-20-15-45 15-40 0 25-15 40-15 40z' fill='%234ade80'/%3E%3Cpath d='M120 175v-35a15 15 0 0 1 15-15h35m172 0h35a15 15 0 0 1 15 15v35m-272 140v35a15 15 0 0 0 15 15h35m172 0h35a15 15 0 0 0 15-15v-35' stroke='%2334d399' stroke-width='9' stroke-linecap='round' fill='none'/%3E%3Cline x1='85' y1='265' x2='427' y2='265' stroke='url(%23l)' stroke-width='8'/%3E%3C/svg%3E">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/@zxing/library@latest"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
 
- <!-- Header with Embedded App Icon -->
+  <!-- Header with App Icon -->
   <header class="bg-slate-800/90 backdrop-blur border-b border-slate-700/80 px-4 py-2.5 flex items-center justify-between sticky top-0 z-30">
     <div class="flex items-center space-x-2.5">
-      <!-- Direct Inline Grocery Badge -->
       <svg class="w-8 h-8 flex-shrink-0 rounded-xl shadow border border-emerald-500/30" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="hBg" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#064e3b" />
-            <stop offset="50%" stop-color="#047857" />
-            <stop offset="100%" stop-color="#0f172a" />
+            <stop offset="0%" stop-color="#064e3b" /><stop offset="50%" stop-color="#047857" /><stop offset="100%" stop-color="#0f172a" />
           </linearGradient>
           <linearGradient id="hApple" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#fb7185" />
-            <stop offset="40%" stop-color="#f43f5e" />
-            <stop offset="100%" stop-color="#be123c" />
+            <stop offset="0%" stop-color="#fb7185" /><stop offset="40%" stop-color="#f43f5e" /><stop offset="100%" stop-color="#be123c" />
           </linearGradient>
           <linearGradient id="hCitrus" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#fef08a" />
-            <stop offset="100%" stop-color="#ca8a04" />
+            <stop offset="0%" stop-color="#fef08a" /><stop offset="100%" stop-color="#ca8a04" />
           </linearGradient>
         </defs>
         <rect width="512" height="512" rx="115" fill="url(#hBg)" />
@@ -45,17 +38,18 @@
       </svg>
       <div>
         <h1 class="text-sm font-bold text-white tracking-wide leading-tight">CleanLabel Scanner</h1>
-        <p class="text-[10px] text-slate-400 leading-tight">Packaged Food Ingredients Checker</p>
+        <p class="text-[10px] text-slate-400 leading-tight">Costco & PCC Ingredient Checker</p>
       </div>
     </div>
+    <span id="scan-status" class="text-[11px] bg-slate-700 text-emerald-400 font-medium px-2.5 py-1 rounded-full border border-slate-600">Ready</span>
   </header>
 
- <!-- Centered Main Content Area -->
+  <!-- Centered Content Area -->
   <main class="flex-1 flex flex-col justify-center p-4 max-w-md mx-auto w-full space-y-4 pb-10">
     
     <!-- Camera Viewfinder -->
     <div class="relative bg-black rounded-2xl overflow-hidden aspect-video border border-slate-700 flex items-center justify-center shadow-lg">
-      <video id="video-feed" class="w-full h-full object-cover" autoplay playsinline muted></video>
+      <video id="video-feed" class="w-full h-full object-cover" autoplay playsinline webkit-playsinline muted></video>
       <div id="reticle" class="absolute inset-0 border-2 border-emerald-500/40 rounded-2xl pointer-events-none flex items-center justify-center hidden">
         <div class="w-44 h-24 border-2 border-dashed border-emerald-400 rounded-lg animate-pulse"></div>
       </div>
@@ -64,13 +58,16 @@
       </button>
     </div>
 
+    <!-- Error message alert box (hidden by default) -->
+    <div id="camera-error-box" class="hidden p-3 bg-red-950/80 border border-red-500/50 rounded-xl text-red-200 text-xs font-mono"></div>
+
     <!-- Manual Barcode Lookup -->
     <div class="flex space-x-2">
       <input id="manual-barcode" type="text" placeholder="Barcode (e.g. 096619...)" class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 placeholder-slate-500" />
       <button id="btn-manual-lookup" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-4 py-2 rounded-xl font-medium transition">Lookup</button>
     </div>
 
-    <!-- Product Analysis Card & Enrichment Form -->
+    <!-- Product Analysis Card -->
     <div id="product-card" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-4 shadow-sm space-y-3">
       <div class="flex items-start justify-between">
         <div>
@@ -80,7 +77,6 @@
         <button id="btn-edit-product" class="text-[11px] text-emerald-400 hover:underline">Edit / Enrich</button>
       </div>
 
-      <!-- Health Visual Table -->
       <div class="overflow-hidden rounded-xl border border-slate-700/60 bg-slate-900/40">
         <table class="w-full text-left text-xs">
           <thead>
@@ -90,9 +86,7 @@
               <th class="p-2 font-medium">Flagged Elements</th>
             </tr>
           </thead>
-          <tbody id="evaluation-table-body" class="divide-y divide-slate-800">
-            <!-- Populated dynamically -->
-          </tbody>
+          <tbody id="evaluation-table-body" class="divide-y divide-slate-800"></tbody>
         </table>
       </div>
 
@@ -111,18 +105,15 @@
           <p class="text-[11px] text-slate-400">Save custom ingredients for this barcode to your local database.</p>
         </div>
       </div>
-      
       <div class="space-y-2 text-xs">
         <input id="enrich-name" type="text" placeholder="Item Name (e.g., PCC Granola)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white" />
         <input id="enrich-brand" type="text" placeholder="Brand (e.g., Kirkland Signature)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white" />
         <textarea id="enrich-ingredients" rows="3" placeholder="Paste or type ingredients list..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white font-mono text-[11px]"></textarea>
-        
         <div class="grid grid-cols-2 gap-2">
           <input id="enrich-sugar" type="number" step="0.1" placeholder="Sugars (g) / 100g" class="bg-slate-900 border border-slate-700 rounded-lg p-2 text-white" />
           <input id="enrich-satfat" type="number" step="0.1" placeholder="Sat. Fat (g) / 100g" class="bg-slate-900 border border-slate-700 rounded-lg p-2 text-white" />
         </div>
       </div>
-
       <div class="flex space-x-2 pt-1">
         <button id="btn-save-enrichment" class="flex-1 bg-amber-600 hover:bg-amber-500 text-white text-xs py-2 rounded-lg font-medium transition">Save to My Database</button>
         <button id="btn-cancel-enrichment" class="px-3 bg-slate-700 hover:bg-slate-600 text-xs rounded-lg text-slate-300">Cancel</button>
@@ -132,34 +123,24 @@
   </main>
 
   <script>
-    // Flag definition dictionaries
+    // Automatic Cache-Busting: Unregister stale service workers to prevent cached lockup
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        for (let reg of regs) reg.unregister();
+      });
+    }
+
     const CRITERIA = {
-      carcinogens: [
-        'bha', 'bht', 'tbhq', 'potassium bromate', 'potassium iodate',
-        'sodium nitrite', 'sodium nitrate', 'propyl gallate', 'acrylamide'
-      ],
-      seedOils: [
-        'canola oil', 'soybean oil', 'corn oil', 'cottonseed oil', 
-        'sunflower oil', 'safflower oil', 'grapeseed oil', 'rice bran oil'
-      ],
-      artificialColors: [
-        'red 40', 'red 3', 'yellow 5', 'yellow 6', 'blue 1', 'blue 2',
-        'caramel color', 'caramel colour', 'fd&c'
-      ],
-      cholesterolRisks: [
-        'partially hydrogenated', 'hydrogenated', 'shortening', 'lard', 'palm kernel oil'
-      ],
-      emulsifiers: [
-        'polysorbate 80', 'polysorbate 60', 'carrageenan', 'carboxymethylcellulose',
-        'cellulose gum', 'mono- and diglycerides', 'monoglycerides', 'diglycerides'
-      ],
-      sweeteners: [
-        'aspartame', 'sucralose', 'acesulfame-k', 'acesulfame potassium', 
-        'saccharin', 'erythritol', 'maltitol', 'high fructose corn syrup'
-      ]
+      carcinogens: ['bha', 'bht', 'tbhq', 'potassium bromate', 'potassium iodate', 'sodium nitrite', 'sodium nitrate', 'propyl gallate', 'acrylamide'],
+      seedOils: ['canola oil', 'soybean oil', 'corn oil', 'cottonseed oil', 'sunflower oil', 'safflower oil', 'grapeseed oil', 'rice bran oil'],
+      artificialColors: ['red 40', 'red 3', 'yellow 5', 'yellow 6', 'blue 1', 'blue 2', 'caramel color', 'caramel colour', 'fd&c'],
+      cholesterolRisks: ['partially hydrogenated', 'hydrogenated', 'shortening', 'lard', 'palm kernel oil'],
+      emulsifiers: ['polysorbate 80', 'polysorbate 60', 'carrageenan', 'carboxymethylcellulose', 'cellulose gum', 'mono- and diglycerides', 'monoglycerides', 'diglycerides'],
+      sweeteners: ['aspartame', 'sucralose', 'acesulfame-k', 'acesulfame potassium', 'saccharin', 'erythritol', 'maltitol', 'high fructose corn syrup']
     };
 
-    let codeReader = new ZXing.BrowserMultiFormatReader();
+    let localStream = null;
+    let codeReader = null;
     let isScanning = false;
     let currentBarcode = null;
 
@@ -168,6 +149,8 @@
     const manualInput = document.getElementById('manual-barcode');
     const reticle = document.getElementById('reticle');
     const statusLabel = document.getElementById('scan-status');
+    const errorBox = document.getElementById('camera-error-box');
+    const videoEl = document.getElementById('video-feed');
 
     toggleBtn.addEventListener('click', async () => {
       if (isScanning) {
@@ -178,50 +161,62 @@
     });
 
     async function startScanner() {
+      errorBox.classList.add('hidden');
+      statusLabel.innerText = "Starting...";
+
       try {
-        statusLabel.innerText = "Starting...";
-        toggleBtn.innerText = "Stop Camera";
-        reticle.classList.remove('hidden');
-        isScanning = true;
-    
-        // Force the rear (back-facing) camera on mobile devices
+        // Step 1: Use native browser mediaDevices directly
         const constraints = {
+          audio: false,
           video: {
             facingMode: { ideal: "environment" },
             width: { ideal: 1280 },
             height: { ideal: 720 }
           }
         };
-    
-        await codeReader.decodeFromConstraints(constraints, 'video-feed', (result, err) => {
+
+        localStream = await navigator.mediaDevices.getUserMedia(constraints);
+        videoEl.srcObject = localStream;
+        await videoEl.play();
+
+        // Step 2: Show viewfinder UI
+        toggleBtn.innerText = "Stop Camera";
+        reticle.classList.remove('hidden');
+        statusLabel.innerText = "Scanning...";
+        isScanning = true;
+
+        // Step 3: Attach ZXing directly to the active playing element
+        if (!codeReader) {
+          codeReader = new ZXing.BrowserMultiFormatReader();
+        }
+
+        codeReader.decodeFromVideoElement(videoEl, (result, err) => {
           if (result) {
             stopScanner();
-            fetchAndAnalyze(result.text);
+            fetchAndAnalyze(result.getText());
           }
         });
-    
-        statusLabel.innerText = "Scanning...";
+
       } catch (err) {
-        console.error("Scanner startup error:", err);
+        console.error("Camera failure:", err);
         stopScanner();
-        statusLabel.innerText = "Camera Error";
-        alert("Camera access failed. Check browser permissions: " + err.message);
+        statusLabel.innerText = "Error";
+        errorBox.classList.remove('hidden');
+        errorBox.innerText = `Camera Error: ${err.name} - ${err.message}. Please verify camera permissions in your browser.`;
       }
     }
-    
+
     function stopScanner() {
-      try {
-        codeReader.reset();
-      } catch (e) {}
-    
-      // Hard-release all hardware camera streams to prevent device locking
-      const video = document.getElementById('video-feed');
-      if (video && video.srcObject) {
-        const stream = video.srcObject;
-        stream.getTracks().forEach(track => track.stop());
-        video.srcObject = null;
+      if (codeReader) {
+        try { codeReader.reset(); } catch (e) {}
       }
-    
+
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = null;
+      }
+
+      videoEl.srcObject = null;
       isScanning = false;
       reticle.classList.add('hidden');
       toggleBtn.innerText = "Start Camera";
@@ -233,21 +228,17 @@
       if (code) fetchAndAnalyze(code);
     });
 
-    // Main fetch & analysis flow
     async function fetchAndAnalyze(barcode) {
       currentBarcode = barcode;
       statusLabel.innerText = "Checking...";
 
-      // 1. Check local persistent database first
       const localData = localStorage.getItem(`food_${barcode}`);
       if (localData) {
-        const item = JSON.parse(localData);
-        renderAnalysis(item);
+        renderAnalysis(JSON.parse(localData));
         statusLabel.innerText = "Local Database";
         return;
       }
 
-      // 2. Fall back to Open Food Facts
       try {
         const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
         const data = await res.json();
@@ -283,7 +274,6 @@
       const satFat = Number(item.satFat100g) || 0;
 
       const findMatches = (arr) => arr.filter(term => text.includes(term));
-
       const cMatches = findMatches(CRITERIA.carcinogens);
       const sMatches = findMatches(CRITERIA.seedOils);
       const dyeMatches = findMatches(CRITERIA.artificialColors);
@@ -291,7 +281,7 @@
       const swMatches = findMatches(CRITERIA.sweeteners);
       const chMatches = findMatches(CRITERIA.cholesterolRisks);
 
-      const isHighSugar = sugar > 10; // >10g/100g threshold
+      const isHighSugar = sugar > 10;
       const isHighSatFat = satFat > 4 || chMatches.length > 0;
 
       const rows = [
@@ -314,7 +304,6 @@
       `).join('');
     }
 
-    // Enrichment flow for unlisted or custom foods
     function promptEnrichment(barcode) {
       statusLabel.innerText = "Not in Catalog";
       document.getElementById('product-card').classList.add('hidden');
@@ -351,11 +340,6 @@
     document.getElementById('btn-edit-product').addEventListener('click', () => {
       promptEnrichment(currentBarcode);
     });
-
-    // Register Service Worker for PWA
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(() => {});
-    }
   </script>
 </body>
 </html>
