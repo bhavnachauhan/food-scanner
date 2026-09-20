@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>CleanLabel Food Scanner</title>
+  <link rel="manifest" href="manifest.json" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@zxing/library@latest"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
+
+  <!-- Header -->
+  <header class="bg-slate-800/90 backdrop-blur border-b border-slate-700/80 px-4 py-3 flex items-center justify-between sticky top-0 z-30">
+    <div>
+      <h1 class="text-sm font-bold text-white tracking-wide">CleanLabel Scanner</h1>
+      <p class="text-[10px] text-slate-400">Costco & PCC Ingredient Checker</p>
+    </div>
+    <span id="scan-status" class="text-[11px] bg-slate-700 text-emerald-400 font-medium px-2.5 py-1 rounded-full border border-slate-600">Ready</span>
+  </header>
+
+  <main class="flex-1 flex flex-col p-4 max-w-md mx-auto w-full space-y-4 pb-12">
+    
+    <!-- Camera Viewfinder -->
+    <div class="relative bg-black rounded-2xl overflow-hidden aspect-video border border-slate-700 flex items-center justify-center shadow-lg">
+      <video id="video-feed" class="w-full h-full object-cover"></video>
+      <div id="reticle" class="absolute inset-0 border-2 border-emerald-500/40 rounded-2xl pointer-events-none flex items-center justify-center hidden">
+        <div class="w-44 h-24 border-2 border-dashed border-emerald-400 rounded-lg animate-pulse"></div>
+      </div>
+      <button id="btn-toggle-camera" class="absolute bottom-3 bg-slate-800/90 text-white text-xs px-3.5 py-1.5 rounded-lg border border-slate-600 shadow hover:bg-slate-700 transition">
+        Start Camera
+      </button>
+    </div>
+
+    <!-- Manual Barcode Lookup -->
+    <div class="flex space-x-2">
+      <input id="manual-barcode" type="text" placeholder="Barcode (e.g. 096619...)" class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 placeholder-slate-500" />
+      <button id="btn-manual-lookup" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-4 py-2 rounded-xl font-medium transition">Lookup</button>
+    </div>
+
+    <!-- Product Analysis Card -->
+    <div id="product-card" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-4 shadow-sm space-y-3">
+      <div class="flex items-start justify-between">
+        <div>
+          <h2 id="product-name" class="font-bold text-sm text-white">Product Name</h2>
+          <p id="product-brand" class="text-xs text-slate-400">Brand</p>
+        </div>
+        <button id="btn-edit-product" class="text-[11px] text-emerald-400 hover:underline">Edit / Enrich</button>
+      </div>
+
+      <!-- Health Visual Table -->
+      <div class="overflow-hidden rounded-xl border border-slate-700/60 bg-slate-900/40">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="border-b border-slate-700 text-slate-400 bg-slate-800/50">
+              <th class="p-2 font-medium">Category</th>
+              <th class="p-2 font-medium text-center">Status</th>
+              <th class="p-2 font-medium">Flagged Elements</th>
+            </tr>
+          </thead>
+          <tbody id="evaluation-table-body" class="divide-y divide-slate-800">
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pt-2 border-t border-slate-700">
+        <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Raw Ingredients</span>
+        <p id="ingredients-raw" class="text-[11px] text-slate-300 leading-relaxed max-h-24 overflow-y-auto bg-slate-900/80 p-2.5 rounded-lg mt-1 font-mono"></p>
+      </div>
+    </div>
+
+    <!-- Missing / Custom Food Enrichment Form -->
+    <div id="enrichment-card" class="hidden bg-slate-800 border border-amber-500/50 rounded-2xl p-4 space-y-3">
+      <div class="flex items-center space-x-2">
+        <span class="text-amber-400 text-base">⚠️</span>
+        <div>
+          <h3 class="font-semibold text-xs text-amber-300">Food Item Needs Enrichment</h3>
+          <p class="text-[11px] text-slate-400">Save custom ingredients for this barcode to your local database.</p>
+        </div>
+      </div>
+      
+      <div class="space-y-2 text-xs">
+        <input id="enrich-name" type="text" placeholder="Item Name (e.g., PCC Granola)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white" />
+        <input id="enrich-brand" type="text" placeholder="Brand (e.g., Kirkland Signature)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white" />
+        <textarea id="enrich-ingredients" rows="3" placeholder="Paste or type ingredients list..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white font-mono text-[11px]"></textarea>
+        
+        <div class="grid grid-cols-2 gap-2">
+          <input id="enrich-sugar" type="number" step="0.1" placeholder="Sugars (g) / 100g" class="bg-slate-900 border border-slate-700 rounded-lg p-2 text-white" />
+          <input id="enrich-satfat" type="number" step="0.1" placeholder="Sat. Fat (g) / 100g" class="bg-slate-900 border border-slate-700 rounded-lg p-2 text-white" />
+        </div>
+      </div>
+
+      <div class="flex space-x-2 pt-1">
+        <button id="btn-save-enrichment" class="flex-1 bg-amber-600 hover:bg-amber-500 text-white text-xs py-2 rounded-lg font-medium transition">Save to My Database</button>
+        <button id="btn-cancel-enrichment" class="px-3 bg-slate-700 hover:bg-slate-600 text-xs rounded-lg text-slate-300">Cancel</button>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // Flag definition dictionaries
+    const CRITERIA = {
+      carcinogens: [
+        'bha', 'bht', 'tbhq', 'potassium bromate', 'potassium iodate',
+        'sodium nitrite', 'sodium nitrate', 'propyl gallate', 'acrylamide'
+      ],
+      seedOils: [
+        'canola oil', 'soybean oil', 'corn oil', 'cottonseed oil', 
+        'sunflower oil', 'safflower oil', 'grapeseed oil', 'rice bran oil'
+      ],
+      artificialColors: [
+        'red 40', 'red 3', 'yellow 5', 'yellow 6', 'blue 1', 'blue 2',
+        'caramel color', 'caramel colour', 'fd&c'
+      ],
+      cholesterolRisks: [
+        'partially hydrogenated', 'hydrogenated', 'shortening', 'lard', 'palm kernel oil'
+      ],
+      emulsifiers: [
+        'polysorbate 80', 'polysorbate 60', 'carrageenan', 'carboxymethylcellulose',
+        'cellulose gum', 'mono- and diglycerides', 'monoglycerides', 'diglycerides'
+      ],
+      sweeteners: [
+        'aspartame', 'sucralose', 'acesulfame-k', 'acesulfame potassium', 
+        'saccharin', 'erythritol', 'maltitol', 'high fructose corn syrup'
+      ]
+    };
+
+    let codeReader = null;
+    let isScanning = false;
+    let currentBarcode = null;
+
+    const toggleBtn = document.getElementById('btn-toggle-camera');
+    const manualBtn = document.getElementById('btn-manual-lookup');
+    const manualInput = document.getElementById('manual-barcode');
+    const reticle = document.getElementById('reticle');
+    const statusLabel = document.getElementById('scan-status');
+
+    // Camera Scan Handling
+    toggleBtn.addEventListener('click', async () => {
+      if (isScanning) {
+        stopScanner();
+        return;
+      }
+      startScanner();
+    });
+
+    async function startScanner() {
+      codeReader = new ZXing.BrowserMultiFormatReader();
+      try {
+        statusLabel.innerText = "Scanning...";
+        toggleBtn.innerText = "Stop Camera";
+        reticle.classList.remove('hidden');
+        isScanning = true;
+
+        await codeReader.decodeFromVideoDevice(null, 'video-feed', (result) => {
+          if (result) {
+            stopScanner();
+            fetchAndAnalyze(result.text);
+          }
+        });
+      } catch (err) {
+        stopScanner();
+        alert("Camera could not be started. Make sure camera permissions are allowed.");
+      }
+    }
+
+    function stopScanner() {
+      if (codeReader) codeReader.reset();
+      isScanning = false;
+      reticle.classList.add('hidden');
+      toggleBtn.innerText = "Start Camera";
+      statusLabel.innerText = "Ready";
+    }
+
+    manualBtn.addEventListener('click', () => {
+      const code = manualInput.value.trim();
+      if (code) fetchAndAnalyze(code);
+    });
+
+    // Main fetch & analysis flow
+    async function fetchAndAnalyze(barcode) {
+      currentBarcode = barcode;
+      statusLabel.innerText = "Checking...";
+
+      // 1. Check local persistent database first
+      const localData = localStorage.getItem(`food_${barcode}`);
+      if (localData) {
+        const item = JSON.parse(localData);
+        renderAnalysis(item);
+        statusLabel.innerText = "Local Database";
+        return;
+      }
+
+      // 2. Fall back to Open Food Facts
+      try {
+        const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
+        const data = await res.json();
+
+        if (data.status === 1 && data.product) {
+          const product = {
+            name: data.product.product_name || "Unknown Product",
+            brand: data.product.brands || "Unknown Brand",
+            ingredients: data.product.ingredients_text || "",
+            sugar100g: data.product.nutriments?.sugars_100g || 0,
+            satFat100g: data.product.nutriments?.['saturated-fat_100g'] || 0
+          };
+          renderAnalysis(product);
+          statusLabel.innerText = "OFF Database";
+        } else {
+          promptEnrichment(barcode);
+        }
+      } catch (e) {
+        promptEnrichment(barcode);
+      }
+    }
+
+    function renderAnalysis(item) {
+      document.getElementById('enrichment-card').classList.add('hidden');
+      document.getElementById('product-card').classList.remove('hidden');
+
+      document.getElementById('product-name').innerText = item.name;
+      document.getElementById('product-brand').innerText = item.brand;
+      document.getElementById('ingredients-raw').innerText = item.ingredients || "No ingredients listed.";
+
+      const text = (item.ingredients || "").toLowerCase();
+      const sugar = Number(item.sugar100g) || 0;
+      const satFat = Number(item.satFat100g) || 0;
+
+      const findMatches = (arr) => arr.filter(term => text.includes(term));
+
+      const cMatches = findMatches(CRITERIA.carcinogens);
+      const sMatches = findMatches(CRITERIA.seedOils);
+      const dyeMatches = findMatches(CRITERIA.artificialColors);
+      const emMatches = findMatches(CRITERIA.emulsifiers);
+      const swMatches = findMatches(CRITERIA.sweeteners);
+      const chMatches = findMatches(CRITERIA.cholesterolRisks);
+
+      const isHighSugar = sugar > 10; // >10g/100g threshold
+      const isHighSatFat = satFat > 4 || chMatches.length > 0;
+
+      const rows = [
+        { name: "Carcinogenic Additives", bad: cMatches.length > 0, info: cMatches.join(", ") },
+        { name: "Industrial Seed Oils", bad: sMatches.length > 0, info: sMatches.join(", ") },
+        { name: "Artificial Colors", bad: dyeMatches.length > 0, info: dyeMatches.join(", ") },
+        { name: "Sugar Level", bad: isHighSugar, info: `${sugar}g / 100g ${isHighSugar ? '(High Sugar)' : '(Acceptable)'}` },
+        { name: "Cholesterol / Trans Fat", bad: isHighSatFat, info: `${satFat}g sat fat ${chMatches.length ? '(' + chMatches.join(', ') + ')' : ''}` },
+        { name: "Gut Emulsifiers", bad: emMatches.length > 0, info: emMatches.join(", ") },
+        { name: "Synthetic Sweeteners", bad: swMatches.length > 0, info: swMatches.join(", ") }
+      ];
+
+      const tbody = document.getElementById('evaluation-table-body');
+      tbody.innerHTML = rows.map(r => `
+        <tr class="hover:bg-slate-800/40">
+          <td class="p-2 text-slate-200 font-medium">${r.name}</td>
+          <td class="p-2 text-center text-sm">${r.bad ? '🔴' : '🟢'}</td>
+          <td class="p-2 text-slate-400 capitalize text-[11px]">${r.bad ? r.info : 'None detected'}</td>
+        </tr>
+      `).join('');
+    }
+
+    // Enrichment flow for unlisted or custom foods
+    function promptEnrichment(barcode) {
+      statusLabel.innerText = "Not in Catalog";
+      document.getElementById('product-card').classList.add('hidden');
+      const enrichCard = document.getElementById('enrichment-card');
+      enrichCard.classList.remove('hidden');
+
+      document.getElementById('enrich-name').value = '';
+      document.getElementById('enrich-brand').value = '';
+      document.getElementById('enrich-ingredients').value = '';
+      document.getElementById('enrich-sugar').value = '';
+      document.getElementById('enrich-satfat').value = '';
+    }
+
+    document.getElementById('btn-save-enrichment').addEventListener('click', () => {
+      if (!currentBarcode) return;
+      const enrichedProduct = {
+        name: document.getElementById('enrich-name').value || "Custom Item",
+        brand: document.getElementById('enrich-brand').value || "Custom Brand",
+        ingredients: document.getElementById('enrich-ingredients').value || "",
+        sugar100g: document.getElementById('enrich-sugar').value || 0,
+        satFat100g: document.getElementById('enrich-satfat').value || 0
+      };
+
+      localStorage.setItem(`food_${currentBarcode}`, JSON.stringify(enrichedProduct));
+      renderAnalysis(enrichedProduct);
+      statusLabel.innerText = "Saved to Device";
+    });
+
+    document.getElementById('btn-cancel-enrichment').addEventListener('click', () => {
+      document.getElementById('enrichment-card').classList.add('hidden');
+      statusLabel.innerText = "Ready";
+    });
+
+    document.getElementById('btn-edit-product').addEventListener('click', () => {
+      promptEnrichment(currentBarcode);
+    });
+
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
