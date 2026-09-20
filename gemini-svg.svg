@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#064e3b" />
+      <stop offset="50%" stop-color="#047857" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+
+    <!-- Produce Gradients -->
+    <linearGradient id="appleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fb7185" />
+      <stop offset="40%" stop-color="#f43f5e" />
+      <stop offset="100%" stop-color="#be123c" />
+    </linearGradient>
+    <linearGradient id="citrusGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="50%" stop-color="#facc15" />
+      <stop offset="100%" stop-color="#ca8a04" />
+    </linearGradient>
+    <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ade80" />
+      <stop offset="100%" stop-color="#15803d" />
+    </linearGradient>
+
+    <!-- Laser Beam Glow -->
+    <linearGradient id="laserGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0" />
+      <stop offset="30%" stop-color="#38bdf8" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="1" />
+      <stop offset="70%" stop-color="#38bdf8" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0" />
+    </linearGradient>
+    <filter id="laserGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="glow" />
+      <feMerge>
+        <feMergeNode in="glow" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- App Icon Squircle Background -->
+  <rect width="512" height="512" rx="115" fill="url(#bg)" />
+
+  <!-- Outer Protective Badge Circle -->
+  <circle cx="256" cy="245" r="160" fill="#065f46" fill-opacity="0.35" stroke="#34d399" stroke-width="4" stroke-dasharray="8 6" />
+
+  <!-- Grocery Graphics -->
+  <g id="produce-group">
+    <!-- Golden Orange / Citrus (Right) -->
+    <circle cx="295" cy="275" r="75" fill="url(#citrusGrad)" />
+    <!-- Citrus Inner Segments -->
+    <path d="M 295 215 A 60 60 0 0 1 355 275 L 295 275 Z" fill="#ffffff" fill-opacity="0.25" />
+
+    <!-- Red Apple (Left / Center Front) -->
+    <g id="apple">
+      <!-- Apple Body -->
+      <path d="M 215 190 C 235 190 250 205 255 215 C 260 205 275 190 295 190 C 345 190 365 240 355 295 C 345 345 305 355 265 350 C 258 349 252 349 245 350 C 205 355 165 345 155 295 C 145 240 165 190 215 190 Z" fill="url(#appleGrad)" />
+      <!-- Apple Highlight -->
+      <ellipse cx="200" cy="240" rx="20" ry="38" transform="rotate(-25 200 240)" fill="#ffffff" fill-opacity="0.28" />
+      <!-- Apple Stem -->
+      <path d="M 255 210 C 255 185 268 170 278 160" stroke="#78350f" stroke-width="7" stroke-linecap="round" fill="none" />
+      <!-- Fresh Green Leaf -->
+      <path d="M 255 185 C 230 165 240 140 270 145 C 270 170 255 185 255 185 Z" fill="url(#leafGrad)" />
+    </g>
+  </g>
+
+  <!-- Scanner Target Corners -->
+  <path d="M 120 175 L 120 140 A 15 15 0 0 1 135 125 L 170 125" stroke="#34d399" stroke-width="9" stroke-linecap="round" fill="none" />
+  <path d="M 342 125 L 377 125 A 15 15 0 0 1 392 140 L 392 175" stroke="#34d399" stroke-width="9" stroke-linecap="round" fill="none" />
+  <path d="M 120 315 L 120 350 A 15 15 0 0 0 135 365 L 170 365" stroke="#34d399" stroke-width="9" stroke-linecap="round" fill="none" />
+  <path d="M 342 365 L 377 365 A 15 15 0 0 0 392 350 L 392 315" stroke="#34d399" stroke-width="9" stroke-linecap="round" fill="none" />
+
+  <!-- Laser Barcode Scan Beam -->
+  <line x1="85" y1="265" x2="427" y2="265" stroke="url(#laserGrad)" stroke-width="8" filter="url(#laserGlow)" />
+  <line x1="110" y1="265" x2="402" y2="265" stroke="#ffffff" stroke-width="2.5" />
+
+  <!-- Barcode Ticks at Base -->
+  <g transform="translate(186, 395)" fill="#6ee7b7">
+    <rect x="0" width="6" height="30" rx="3" />
+    <rect x="12" width="12" height="30" rx="3" />
+    <rect x="30" width="5" height="30" rx="2" />
+    <rect x="42" width="16" height="30" rx="3" />
+    <rect x="64" width="7" height="30" rx="3" />
+    <rect x="78" width="14" height="30" rx="3" />
+    <rect x="98" width="6" height="30" rx="3" />
+    <rect x="110" width="18" height="30" rx="3" />
+    <rect x="134" width="6" height="30" rx="3" />
+  </g>
+</svg>
