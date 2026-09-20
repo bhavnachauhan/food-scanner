@@ -140,7 +140,10 @@
     artificialColors: ['red 40', 'red 3', 'yellow 5', 'yellow 6', 'blue 1', 'blue 2', 'caramel color', 'caramel colour', 'fd&c'],
     cholesterolRisks: ['partially hydrogenated', 'hydrogenated', 'shortening', 'lard', 'palm kernel oil'],
     emulsifiers: ['polysorbate 80', 'polysorbate 60', 'carrageenan', 'carboxymethylcellulose', 'cellulose gum', 'mono- and diglycerides', 'monoglycerides', 'diglycerides'],
-    sweeteners: ['aspartame', 'sucralose', 'acesulfame-k', 'acesulfame potassium', 'saccharin', 'erythritol', 'maltitol', 'high fructose corn syrup']
+    sweeteners: ['aspartame', 'sucralose', 'acesulfame-k', 'acesulfame potassium', 'saccharin', 'erythritol', 'maltitol', 'high fructose corn syrup'],
+    preservatives: ['sodium benzoate', 'potassium sorbate', 'calcium propionate', 'sulfur dioxide', 'sodium bisulfite', 'sodium metabisulfite'],
+    doughConditioners: ['azodicarbonamide', 'bleached flour', 'bleached wheat flour', 'datem', 'l-cysteine'],
+    flavorEnhancers: ['monosodium glutamate', 'msg', 'yeast extract', 'autolyzed yeast', 'hydrolyzed protein', 'disodium inosinate', 'disodium guanylate']
   };
 
   // Restrict scanner to supermarket 1D barcodes for instant detection
@@ -285,18 +288,35 @@
     const emMatches = findMatches(CRITERIA.emulsifiers);
     const swMatches = findMatches(CRITERIA.sweeteners);
     const chMatches = findMatches(CRITERIA.cholesterolRisks);
+    const presMatches = findMatches(CRITERIA.preservatives);
+    const doughMatches = findMatches(CRITERIA.doughConditioners);
+    const msgMatches = findMatches(CRITERIA.flavorEnhancers);
 
-    const isHighSugar = sugar > 10;
+    // Sugar calculation
+    const addedSugar = Number(item.addedSugar100g || 0);
+    const totalSugar = Number(item.sugar100g || 0);
+    const isHighSugar = addedSugar > 2.5 || totalSugar > 5;
+    const sugarDetails = addedSugar > 0 
+      ? `${addedSugar}g added sugar (${isHighSugar ? 'Exceeds budget' : 'Low'})`
+      : `${totalSugar}g total sugar / 100g (${isHighSugar ? 'High' : 'Acceptable'})`;
+    
     const isHighSatFat = satFat > 4 || chMatches.length > 0;
+    
+    const sodium100g = Number(item.sodium100g || (item.salt100g ? item.salt100g / 2.5 : 0)) || 0;
+    const isHighSodium = sodium100g > 0.6; // >600mg sodium per 100g standard threshold
 
     const rows = [
       { name: "Carcinogenic Additives", bad: cMatches.length > 0, info: cMatches.join(", ") },
       { name: "Industrial Seed Oils", bad: sMatches.length > 0, info: sMatches.join(", ") },
       { name: "Artificial Colors", bad: dyeMatches.length > 0, info: dyeMatches.join(", ") },
-      { name: "Sugar Level", bad: isHighSugar, info: `${sugar}g / 100g ${isHighSugar ? '(High Sugar)' : '(Acceptable)'}` },
+      { name: "Sugar Level", bad: isHighSugar, info: sugarDetails },
       { name: "Cholesterol / Trans Fat", bad: isHighSatFat, info: `${satFat}g sat fat ${chMatches.length ? '(' + chMatches.join(', ') + ')' : ''}` },
       { name: "Gut Emulsifiers", bad: emMatches.length > 0, info: emMatches.join(", ") },
-      { name: "Synthetic Sweeteners", bad: swMatches.length > 0, info: swMatches.join(", ") }
+      { name: "Synthetic Sweeteners", bad: swMatches.length > 0, info: swMatches.join(", ") },
+      { name: "Sodium / Salt Level", bad: isHighSodium, info: `${Math.round(sodium100g * 1000)}mg Na / 100g ${isHighSodium ? '(High Sodium)' : '(Moderate/Low)'}` },
+      { name: "Synthetic Preservatives", bad: presMatches.length > 0, info: presMatches.join(", ") },
+      { name: "Dough Conditioners / Bleached", bad: doughMatches.length > 0, info: doughMatches.join(", ") },
+      { name: "Flavor Enhancers (MSG)", bad: msgMatches.length > 0, info: msgMatches.join(", ") }
     ];
 
     const tbody = document.getElementById('evaluation-table-body');
