@@ -45,7 +45,6 @@
         <p class="text-[10px] text-slate-400 leading-tight">Packaged Food Ingredients Checker</p>
       </div>
     </div>
-    <span id="scan-status" class="text-[11px] bg-slate-700 text-emerald-400 font-medium px-2.5 py-1 rounded-full border border-slate-600">Ready</span>
   </header>
 
   <!-- Centered Content Area -->
@@ -113,9 +112,10 @@
         <input id="enrich-name" type="text" placeholder="Item Name (e.g., PCC Granola)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white" />
         <input id="enrich-brand" type="text" placeholder="Brand (e.g., Kirkland Signature)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white" />
         <textarea id="enrich-ingredients" rows="3" placeholder="Paste or type ingredients list..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white font-mono text-[11px]"></textarea>
-        <div class="grid grid-cols-2 gap-2">
-          <input id="enrich-sugar" type="number" step="0.1" placeholder="Sugars (g) / 100g" class="bg-slate-900 border border-slate-700 rounded-lg p-2 text-white" />
-          <input id="enrich-satfat" type="number" step="0.1" placeholder="Sat. Fat (g) / 100g" class="bg-slate-900 border border-slate-700 rounded-lg p-2 text-white" />
+        <div class="grid grid-cols-3 gap-2">
+          <input id="enrich-sugar" type="number" step="0.1" placeholder="Sugars (g)" class="bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-[11px]" />
+          <input id="enrich-satfat" type="number" step="0.1" placeholder="Sat. Fat (g)" class="bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-[11px]" />
+          <input id="enrich-sodium" type="number" step="1" placeholder="Sodium (mg)" class="bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-[11px]" />
         </div>
       </div>
       <div class="flex space-x-2 pt-1">
@@ -127,241 +127,245 @@
   </main>
 
   <script>
-  // Clear legacy service worker caches to ensure immediate script updates
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(regs => {
-      for (let reg of regs) reg.unregister();
-    });
-  }
-
-  const CRITERIA = {
-    carcinogens: ['bha', 'bht', 'tbhq', 'potassium bromate', 'potassium iodate', 'sodium nitrite', 'sodium nitrate', 'propyl gallate', 'acrylamide'],
-    seedOils: ['canola oil', 'soybean oil', 'corn oil', 'cottonseed oil', 'sunflower oil', 'safflower oil', 'grapeseed oil', 'rice bran oil'],
-    artificialColors: ['red 40', 'red 3', 'yellow 5', 'yellow 6', 'blue 1', 'blue 2', 'caramel color', 'caramel colour', 'fd&c'],
-    cholesterolRisks: ['partially hydrogenated', 'hydrogenated', 'shortening', 'lard', 'palm kernel oil'],
-    emulsifiers: ['polysorbate 80', 'polysorbate 60', 'carrageenan', 'carboxymethylcellulose', 'cellulose gum', 'mono- and diglycerides', 'monoglycerides', 'diglycerides'],
-    sweeteners: ['aspartame', 'sucralose', 'acesulfame-k', 'acesulfame potassium', 'saccharin', 'erythritol', 'maltitol', 'high fructose corn syrup'],
-    preservatives: ['sodium benzoate', 'potassium sorbate', 'calcium propionate', 'sulfur dioxide', 'sodium bisulfite', 'sodium metabisulfite'],
-    doughConditioners: ['azodicarbonamide', 'bleached flour', 'bleached wheat flour', 'datem', 'l-cysteine'],
-    flavorEnhancers: ['monosodium glutamate', 'msg', 'yeast extract', 'autolyzed yeast', 'hydrolyzed protein', 'disodium inosinate', 'disodium guanylate']
-  };
-
-  // Restrict scanner to supermarket 1D barcodes for instant detection
-  const hints = new Map();
-  const formats = [
-    ZXing.BarcodeFormat.UPC_A,
-    ZXing.BarcodeFormat.UPC_E,
-    ZXing.BarcodeFormat.EAN_13,
-    ZXing.BarcodeFormat.EAN_8,
-    ZXing.BarcodeFormat.CODE_128,
-    ZXing.BarcodeFormat.CODE_39
-  ];
-  hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, formats);
-
-  const codeReader = new ZXing.BrowserMultiFormatReader(hints);
-  let localStream = null;
-  let isScanning = false;
-  let currentBarcode = null;
-
-  const toggleBtn = document.getElementById('btn-toggle-camera');
-  const manualBtn = document.getElementById('btn-manual-lookup');
-  const manualInput = document.getElementById('manual-barcode');
-  const reticle = document.getElementById('reticle');
-  const errorBox = document.getElementById('camera-error-box');
-  const videoEl = document.getElementById('video-feed');
-
-  toggleBtn.addEventListener('click', async () => {
-    if (isScanning) {
-      stopScanner();
-    } else {
-      await startScanner();
-    }
-  });
-
-  async function startScanner() {
-    if (errorBox) errorBox.classList.add('hidden');
-
-    try {
-      const constraints = {
-        audio: false,
-        video: {
-          facingMode: { ideal: "environment" },
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
-      };
-
-      localStream = await navigator.mediaDevices.getUserMedia(constraints);
-      videoEl.srcObject = localStream;
-      await videoEl.play();
-
-      toggleBtn.innerText = "Stop Camera";
-      reticle.classList.remove('hidden');
-      isScanning = true;
-
-      // Continuous loop: inspects every incoming frame until a barcode matches
-      codeReader.decodeFromStream(localStream, videoEl, (result, err) => {
-        if (result) {
-          const barcode = result.getText ? result.getText() : result.text;
-          stopScanner();
-          fetchAndAnalyze(barcode);
-        }
+    // Clear legacy service worker caches to ensure immediate script updates
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        for (let reg of regs) reg.unregister();
       });
-
-    } catch (err) {
-      console.error("Camera failure:", err);
-      stopScanner();
-      if (errorBox) {
-        errorBox.classList.remove('hidden');
-        errorBox.innerText = `Camera Error: ${err.name} - ${err.message}`;
-      }
-    }
-  }
-
-  function stopScanner() {
-    if (codeReader) {
-      try { codeReader.reset(); } catch (e) {}
-    }
-    if (localStream) {
-      localStream.getTracks().forEach(track => track.stop());
-      localStream = null;
-    }
-    videoEl.srcObject = null;
-    isScanning = false;
-    reticle.classList.add('hidden');
-    toggleBtn.innerText = "Start Camera";
-  }
-
-  manualBtn.addEventListener('click', () => {
-    const code = manualInput.value.trim();
-    if (code) fetchAndAnalyze(code);
-  });
-
-  async function fetchAndAnalyze(barcode) {
-    currentBarcode = barcode;
-
-    // 1. Check local persistent storage
-    const localData = localStorage.getItem(`food_${barcode}`);
-    if (localData) {
-      renderAnalysis(JSON.parse(localData));
-      return;
     }
 
-    // 2. Fetch from Open Food Facts
-    try {
-      const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
-      const data = await res.json();
-
-      if (data.status === 1 && data.product) {
-        const product = {
-          name: data.product.product_name || "Unknown Product",
-          brand: data.product.brands || "Unknown Brand",
-          ingredients: data.product.ingredients_text || "",
-          sugar100g: data.product.nutriments?.sugars_100g || 0,
-          satFat100g: data.product.nutriments?.['saturated-fat_100g'] || 0
-        };
-        renderAnalysis(product);
-      } else {
-        promptEnrichment(barcode);
-      }
-    } catch (e) {
-      promptEnrichment(barcode);
-    }
-  }
-
-  function renderAnalysis(item) {
-    document.getElementById('enrichment-card').classList.add('hidden');
-    document.getElementById('product-card').classList.remove('hidden');
-
-    document.getElementById('product-name').innerText = item.name;
-    document.getElementById('product-brand').innerText = item.brand;
-    document.getElementById('ingredients-raw').innerText = item.ingredients || "No ingredients listed.";
-
-    const text = (item.ingredients || "").toLowerCase();
-    const sugar = Number(item.sugar100g) || 0;
-    const satFat = Number(item.satFat100g) || 0;
-
-    const findMatches = (arr) => arr.filter(term => text.includes(term));
-    const cMatches = findMatches(CRITERIA.carcinogens);
-    const sMatches = findMatches(CRITERIA.seedOils);
-    const dyeMatches = findMatches(CRITERIA.artificialColors);
-    const emMatches = findMatches(CRITERIA.emulsifiers);
-    const swMatches = findMatches(CRITERIA.sweeteners);
-    const chMatches = findMatches(CRITERIA.cholesterolRisks);
-    const presMatches = findMatches(CRITERIA.preservatives);
-    const doughMatches = findMatches(CRITERIA.doughConditioners);
-    const msgMatches = findMatches(CRITERIA.flavorEnhancers);
-
-    // Sugar calculation
-    const addedSugar = Number(item.addedSugar100g || 0);
-    const totalSugar = Number(item.sugar100g || 0);
-    const isHighSugar = addedSugar > 2.5 || totalSugar > 5;
-    const sugarDetails = addedSugar > 0 
-      ? `${addedSugar}g added sugar (${isHighSugar ? 'Exceeds budget' : 'Low'})`
-      : `${totalSugar}g total sugar / 100g (${isHighSugar ? 'High' : 'Acceptable'})`;
-    
-    const isHighSatFat = satFat > 4 || chMatches.length > 0;
-    
-    const sodium100g = Number(item.sodium100g || (item.salt100g ? item.salt100g / 2.5 : 0)) || 0;
-    const isHighSodium = sodium100g > 0.6; // >600mg sodium per 100g standard threshold
-
-    const rows = [
-      { name: "Carcinogenic Additives", bad: cMatches.length > 0, info: cMatches.join(", ") },
-      { name: "Industrial Seed Oils", bad: sMatches.length > 0, info: sMatches.join(", ") },
-      { name: "Artificial Colors", bad: dyeMatches.length > 0, info: dyeMatches.join(", ") },
-      { name: "Sugar Level", bad: isHighSugar, info: sugarDetails },
-      { name: "Cholesterol / Trans Fat", bad: isHighSatFat, info: `${satFat}g sat fat ${chMatches.length ? '(' + chMatches.join(', ') + ')' : ''}` },
-      { name: "Gut Emulsifiers", bad: emMatches.length > 0, info: emMatches.join(", ") },
-      { name: "Synthetic Sweeteners", bad: swMatches.length > 0, info: swMatches.join(", ") },
-      { name: "Sodium / Salt Level", bad: isHighSodium, info: `${Math.round(sodium100g * 1000)}mg Na / 100g ${isHighSodium ? '(High Sodium)' : '(Moderate/Low)'}` },
-      { name: "Synthetic Preservatives", bad: presMatches.length > 0, info: presMatches.join(", ") },
-      { name: "Dough Conditioners / Bleached", bad: doughMatches.length > 0, info: doughMatches.join(", ") },
-      { name: "Flavor Enhancers (MSG)", bad: msgMatches.length > 0, info: msgMatches.join(", ") }
-    ];
-
-    const tbody = document.getElementById('evaluation-table-body');
-    tbody.innerHTML = rows.map(r => `
-      <tr class="hover:bg-slate-800/40">
-        <td class="p-2 text-slate-200 font-medium">${r.name}</td>
-        <td class="p-2 text-center text-sm">${r.bad ? '🔴' : '🟢'}</td>
-        <td class="p-2 text-slate-400 capitalize text-[11px]">${r.bad ? r.info : 'None detected'}</td>
-      </tr>
-    `).join('');
-  }
-
-  function promptEnrichment(barcode) {
-    document.getElementById('product-card').classList.add('hidden');
-    const enrichCard = document.getElementById('enrichment-card');
-    enrichCard.classList.remove('hidden');
-
-    document.getElementById('enrich-name').value = '';
-    document.getElementById('enrich-brand').value = '';
-    document.getElementById('enrich-ingredients').value = '';
-    document.getElementById('enrich-sugar').value = '';
-    document.getElementById('enrich-satfat').value = '';
-  }
-
-  document.getElementById('btn-save-enrichment').addEventListener('click', () => {
-    if (!currentBarcode) return;
-    const enrichedProduct = {
-      name: document.getElementById('enrich-name').value || "Custom Item",
-      brand: document.getElementById('enrich-brand').value || "Custom Brand",
-      ingredients: document.getElementById('enrich-ingredients').value || "",
-      sugar100g: document.getElementById('enrich-sugar').value || 0,
-      satFat100g: document.getElementById('enrich-satfat').value || 0
+    const CRITERIA = {
+      carcinogens: ['bha', 'bht', 'tbhq', 'potassium bromate', 'potassium iodate', 'sodium nitrite', 'sodium nitrate', 'propyl gallate', 'acrylamide'],
+      seedOils: ['canola oil', 'soybean oil', 'corn oil', 'cottonseed oil', 'sunflower oil', 'safflower oil', 'grapeseed oil', 'rice bran oil'],
+      artificialColors: ['red 40', 'red 3', 'yellow 5', 'yellow 6', 'blue 1', 'blue 2', 'caramel color', 'caramel colour', 'fd&c'],
+      cholesterolRisks: ['partially hydrogenated', 'hydrogenated', 'shortening', 'lard', 'palm kernel oil'],
+      emulsifiers: ['polysorbate 80', 'polysorbate 60', 'carrageenan', 'carboxymethylcellulose', 'cellulose gum', 'mono- and diglycerides', 'monoglycerides', 'diglycerides'],
+      sweeteners: ['aspartame', 'sucralose', 'acesulfame-k', 'acesulfame potassium', 'saccharin', 'erythritol', 'maltitol', 'high fructose corn syrup'],
+      preservatives: ['sodium benzoate', 'potassium sorbate', 'calcium propionate', 'sulfur dioxide', 'sodium bisulfite', 'sodium metabisulfite'],
+      doughConditioners: ['azodicarbonamide', 'bleached flour', 'bleached wheat flour', 'datem', 'l-cysteine'],
+      flavorEnhancers: ['monosodium glutamate', 'msg', 'yeast extract', 'autolyzed yeast', 'hydrolyzed protein', 'disodium inosinate', 'disodium guanylate']
     };
 
-    localStorage.setItem(`food_${currentBarcode}`, JSON.stringify(enrichedProduct));
-    renderAnalysis(enrichedProduct);
-  });
+    // Restrict scanner to supermarket 1D barcodes for instant detection
+    const hints = new Map();
+    const formats = [
+      ZXing.BarcodeFormat.UPC_A,
+      ZXing.BarcodeFormat.UPC_E,
+      ZXing.BarcodeFormat.EAN_13,
+      ZXing.BarcodeFormat.EAN_8,
+      ZXing.BarcodeFormat.CODE_128,
+      ZXing.BarcodeFormat.CODE_39
+    ];
+    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, formats);
 
-  document.getElementById('btn-cancel-enrichment').addEventListener('click', () => {
-    document.getElementById('enrichment-card').classList.add('hidden');
-  });
+    const codeReader = new ZXing.BrowserMultiFormatReader(hints);
+    let localStream = null;
+    let isScanning = false;
+    let currentBarcode = null;
 
-  document.getElementById('btn-edit-product').addEventListener('click', () => {
-    promptEnrichment(currentBarcode);
-  });
-</script>
+    const toggleBtn = document.getElementById('btn-toggle-camera');
+    const manualBtn = document.getElementById('btn-manual-lookup');
+    const manualInput = document.getElementById('manual-barcode');
+    const reticle = document.getElementById('reticle');
+    const errorBox = document.getElementById('camera-error-box');
+    const videoEl = document.getElementById('video-feed');
+
+    toggleBtn.addEventListener('click', async () => {
+      if (isScanning) {
+        stopScanner();
+      } else {
+        await startScanner();
+      }
+    });
+
+    async function startScanner() {
+      if (errorBox) errorBox.classList.add('hidden');
+
+      try {
+        const constraints = {
+          audio: false,
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        };
+
+        localStream = await navigator.mediaDevices.getUserMedia(constraints);
+        videoEl.srcObject = localStream;
+        await videoEl.play();
+
+        toggleBtn.innerText = "Stop Camera";
+        reticle.classList.remove('hidden');
+        isScanning = true;
+
+        // Continuous loop: inspects every incoming frame until a barcode matches
+        codeReader.decodeFromStream(localStream, videoEl, (result, err) => {
+          if (result) {
+            const barcode = result.getText ? result.getText() : result.text;
+            stopScanner();
+            fetchAndAnalyze(barcode);
+          }
+        });
+
+      } catch (err) {
+        console.error("Camera failure:", err);
+        stopScanner();
+        if (errorBox) {
+          errorBox.classList.remove('hidden');
+          errorBox.innerText = `Camera Error: ${err.name} - ${err.message}`;
+        }
+      }
+    }
+
+    function stopScanner() {
+      if (codeReader) {
+        try { codeReader.reset(); } catch (e) {}
+      }
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = null;
+      }
+      videoEl.srcObject = null;
+      isScanning = false;
+      reticle.classList.add('hidden');
+      toggleBtn.innerText = "Start Camera";
+    }
+
+    manualBtn.addEventListener('click', () => {
+      const code = manualInput.value.trim();
+      if (code) fetchAndAnalyze(code);
+    });
+
+    async function fetchAndAnalyze(barcode) {
+      currentBarcode = barcode;
+
+      // 1. Check local persistent storage
+      const localData = localStorage.getItem(`food_${barcode}`);
+      if (localData) {
+        renderAnalysis(JSON.parse(localData));
+        return;
+      }
+
+      // 2. Fetch from Open Food Facts
+      try {
+        const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
+        const data = await res.json();
+
+        if (data.status === 1 && data.product) {
+          const product = {
+            name: data.product.product_name || "Unknown Product",
+            brand: data.product.brands || "Unknown Brand",
+            ingredients: data.product.ingredients_text || "",
+            sugar100g: data.product.nutriments?.sugars_100g || 0,
+            addedSugar100g: data.product.nutriments?.['added-sugars_100g'] || 0,
+            satFat100g: data.product.nutriments?.['saturated-fat_100g'] || 0,
+            sodium100g: data.product.nutriments?.sodium_100g || 0,
+            salt100g: data.product.nutriments?.salt_100g || 0
+          };
+          renderAnalysis(product);
+        } else {
+          promptEnrichment(barcode);
+        }
+      } catch (e) {
+        promptEnrichment(barcode);
+      }
+    }
+
+    function renderAnalysis(item) {
+      document.getElementById('enrichment-card').classList.add('hidden');
+      document.getElementById('product-card').classList.remove('hidden');
+
+      document.getElementById('product-name').innerText = item.name;
+      document.getElementById('product-brand').innerText = item.brand;
+      document.getElementById('ingredients-raw').innerText = item.ingredients || "No ingredients listed.";
+
+      const text = (item.ingredients || "").toLowerCase();
+
+      const findMatches = (arr) => arr.filter(term => text.includes(term));
+      const cMatches = findMatches(CRITERIA.carcinogens);
+      const sMatches = findMatches(CRITERIA.seedOils);
+      const dyeMatches = findMatches(CRITERIA.artificialColors);
+      const emMatches = findMatches(CRITERIA.emulsifiers);
+      const swMatches = findMatches(CRITERIA.sweeteners);
+      const chMatches = findMatches(CRITERIA.cholesterolRisks);
+      const presMatches = findMatches(CRITERIA.preservatives);
+      const doughMatches = findMatches(CRITERIA.doughConditioners);
+      const msgMatches = findMatches(CRITERIA.flavorEnhancers);
+
+      // Sugar calculation
+      const addedSugar = Number(item.addedSugar100g || 0);
+      const totalSugar = Number(item.sugar100g || 0);
+      const isHighSugar = addedSugar > 2.5 || totalSugar > 5;
+      const sugarDetails = addedSugar > 0 
+        ? `${addedSugar}g added sugar (${isHighSugar ? 'Exceeds budget' : 'Low'})`
+        : `${totalSugar}g total sugar / 100g (${isHighSugar ? 'High' : 'Acceptable'})`;
+
+      const satFat = Number(item.satFat100g) || 0;
+      const isHighSatFat = satFat > 4 || chMatches.length > 0;
+      
+      const sodium100g = Number(item.sodium100g || (item.salt100g ? item.salt100g / 2.5 : 0)) || 0;
+      const isHighSodium = sodium100g > 0.6; // >600mg sodium per 100g standard threshold
+
+      const rows = [
+        { name: "Carcinogenic Additives", bad: cMatches.length > 0, info: cMatches.join(", ") },
+        { name: "Industrial Seed Oils", bad: sMatches.length > 0, info: sMatches.join(", ") },
+        { name: "Artificial Colors", bad: dyeMatches.length > 0, info: dyeMatches.join(", ") },
+        { name: "Sugar Level", bad: isHighSugar, info: sugarDetails },
+        { name: "Cholesterol / Trans Fat", bad: isHighSatFat, info: `${satFat}g sat fat ${chMatches.length ? '(' + chMatches.join(', ') + ')' : ''}` },
+        { name: "Gut Emulsifiers", bad: emMatches.length > 0, info: emMatches.join(", ") },
+        { name: "Synthetic Sweeteners", bad: swMatches.length > 0, info: swMatches.join(", ") },
+        { name: "Sodium / Salt Level", bad: isHighSodium, info: `${Math.round(sodium100g * 1000)}mg Na / 100g ${isHighSodium ? '(High Sodium)' : '(Moderate/Low)'}` },
+        { name: "Synthetic Preservatives", bad: presMatches.length > 0, info: presMatches.join(", ") },
+        { name: "Dough Conditioners / Bleached", bad: doughMatches.length > 0, info: doughMatches.join(", ") },
+        { name: "Flavor Enhancers (MSG)", bad: msgMatches.length > 0, info: msgMatches.join(", ") }
+      ];
+
+      const tbody = document.getElementById('evaluation-table-body');
+      tbody.innerHTML = rows.map(r => `
+        <tr class="hover:bg-slate-800/40">
+          <td class="p-2 text-slate-200 font-medium">${r.name}</td>
+          <td class="p-2 text-center text-sm">${r.bad ? '🔴' : '🟢'}</td>
+          <td class="p-2 text-slate-400 capitalize text-[11px]">${r.bad ? r.info : 'None detected'}</td>
+        </tr>
+      `).join('');
+    }
+
+    function promptEnrichment(barcode) {
+      document.getElementById('product-card').classList.add('hidden');
+      const enrichCard = document.getElementById('enrichment-card');
+      enrichCard.classList.remove('hidden');
+
+      document.getElementById('enrich-name').value = '';
+      document.getElementById('enrich-brand').value = '';
+      document.getElementById('enrich-ingredients').value = '';
+      document.getElementById('enrich-sugar').value = '';
+      document.getElementById('enrich-satfat').value = '';
+      document.getElementById('enrich-sodium').value = '';
+    }
+
+    document.getElementById('btn-save-enrichment').addEventListener('click', () => {
+      if (!currentBarcode) return;
+      const enrichedProduct = {
+        name: document.getElementById('enrich-name').value || "Custom Item",
+        brand: document.getElementById('enrich-brand').value || "Custom Brand",
+        ingredients: document.getElementById('enrich-ingredients').value || "",
+        sugar100g: Number(document.getElementById('enrich-sugar').value) || 0,
+        satFat100g: Number(document.getElementById('enrich-satfat').value) || 0,
+        sodium100g: (Number(document.getElementById('enrich-sodium').value) || 0) / 1000
+      };
+
+      localStorage.setItem(`food_${currentBarcode}`, JSON.stringify(enrichedProduct));
+      renderAnalysis(enrichedProduct);
+    });
+
+    document.getElementById('btn-cancel-enrichment').addEventListener('click', () => {
+      document.getElementById('enrichment-card').classList.add('hidden');
+    });
+
+    document.getElementById('btn-edit-product').addEventListener('click', () => {
+      promptEnrichment(currentBarcode);
+    });
+  </script>
 </body>
 </html>
