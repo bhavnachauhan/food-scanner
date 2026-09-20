@@ -127,10 +127,23 @@
   </main>
 
   <script>
-    // Clear legacy service worker caches to ensure immediate script updates
+    // 1. Automatic Cache-Busting (Existing)
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(regs => {
         for (let reg of regs) reg.unregister();
+      });
+    }
+  
+    // 2. Register New Service Worker (ADD THIS BLOCK)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js') // Pointing to the new file
+          .then((registration) => {
+            console.log('ServiceWorker registered with scope:', registration.scope);
+          })
+          .catch((error) => {
+            console.error('ServiceWorker registration failed:', error);
+          });
       });
     }
 
