@@ -123,223 +123,221 @@
   </main>
 
   <script>
-    // Automatic Cache-Busting: Unregister stale service workers to prevent cached lockup
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(regs => {
-        for (let reg of regs) reg.unregister();
-      });
-    }
-
-    const CRITERIA = {
-      carcinogens: ['bha', 'bht', 'tbhq', 'potassium bromate', 'potassium iodate', 'sodium nitrite', 'sodium nitrate', 'propyl gallate', 'acrylamide'],
-      seedOils: ['canola oil', 'soybean oil', 'corn oil', 'cottonseed oil', 'sunflower oil', 'safflower oil', 'grapeseed oil', 'rice bran oil'],
-      artificialColors: ['red 40', 'red 3', 'yellow 5', 'yellow 6', 'blue 1', 'blue 2', 'caramel color', 'caramel colour', 'fd&c'],
-      cholesterolRisks: ['partially hydrogenated', 'hydrogenated', 'shortening', 'lard', 'palm kernel oil'],
-      emulsifiers: ['polysorbate 80', 'polysorbate 60', 'carrageenan', 'carboxymethylcellulose', 'cellulose gum', 'mono- and diglycerides', 'monoglycerides', 'diglycerides'],
-      sweeteners: ['aspartame', 'sucralose', 'acesulfame-k', 'acesulfame potassium', 'saccharin', 'erythritol', 'maltitol', 'high fructose corn syrup']
-    };
-
-    let localStream = null;
-    let codeReader = null;
-    let isScanning = false;
-    let currentBarcode = null;
-
-    const toggleBtn = document.getElementById('btn-toggle-camera');
-    const manualBtn = document.getElementById('btn-manual-lookup');
-    const manualInput = document.getElementById('manual-barcode');
-    const reticle = document.getElementById('reticle');
-    const statusLabel = document.getElementById('scan-status');
-    const errorBox = document.getElementById('camera-error-box');
-    const videoEl = document.getElementById('video-feed');
-
-    toggleBtn.addEventListener('click', async () => {
-      if (isScanning) {
-        stopScanner();
-      } else {
-        await startScanner();
-      }
+  // Clear legacy service worker caches to ensure immediate script updates
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      for (let reg of regs) reg.unregister();
     });
+  }
 
-    async function startScanner() {
-      errorBox.classList.add('hidden');
-      statusLabel.innerText = "Starting...";
+  const CRITERIA = {
+    carcinogens: ['bha', 'bht', 'tbhq', 'potassium bromate', 'potassium iodate', 'sodium nitrite', 'sodium nitrate', 'propyl gallate', 'acrylamide'],
+    seedOils: ['canola oil', 'soybean oil', 'corn oil', 'cottonseed oil', 'sunflower oil', 'safflower oil', 'grapeseed oil', 'rice bran oil'],
+    artificialColors: ['red 40', 'red 3', 'yellow 5', 'yellow 6', 'blue 1', 'blue 2', 'caramel color', 'caramel colour', 'fd&c'],
+    cholesterolRisks: ['partially hydrogenated', 'hydrogenated', 'shortening', 'lard', 'palm kernel oil'],
+    emulsifiers: ['polysorbate 80', 'polysorbate 60', 'carrageenan', 'carboxymethylcellulose', 'cellulose gum', 'mono- and diglycerides', 'monoglycerides', 'diglycerides'],
+    sweeteners: ['aspartame', 'sucralose', 'acesulfame-k', 'acesulfame potassium', 'saccharin', 'erythritol', 'maltitol', 'high fructose corn syrup']
+  };
 
-      try {
-        // Step 1: Use native browser mediaDevices directly
-        const constraints = {
-          audio: false,
-          video: {
-            facingMode: { ideal: "environment" },
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          }
-        };
+  // Restrict scanner to supermarket 1D barcodes for instant detection
+  const hints = new Map();
+  const formats = [
+    ZXing.BarcodeFormat.UPC_A,
+    ZXing.BarcodeFormat.UPC_E,
+    ZXing.BarcodeFormat.EAN_13,
+    ZXing.BarcodeFormat.EAN_8,
+    ZXing.BarcodeFormat.CODE_128,
+    ZXing.BarcodeFormat.CODE_39
+  ];
+  hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, formats);
 
-        localStream = await navigator.mediaDevices.getUserMedia(constraints);
-        videoEl.srcObject = localStream;
-        await videoEl.play();
+  const codeReader = new ZXing.BrowserMultiFormatReader(hints);
+  let localStream = null;
+  let isScanning = false;
+  let currentBarcode = null;
 
-        // Step 2: Show viewfinder UI
-        toggleBtn.innerText = "Stop Camera";
-        reticle.classList.remove('hidden');
-        statusLabel.innerText = "Scanning...";
-        isScanning = true;
+  const toggleBtn = document.getElementById('btn-toggle-camera');
+  const manualBtn = document.getElementById('btn-manual-lookup');
+  const manualInput = document.getElementById('manual-barcode');
+  const reticle = document.getElementById('reticle');
+  const errorBox = document.getElementById('camera-error-box');
+  const videoEl = document.getElementById('video-feed');
 
-        // Step 3: Attach ZXing directly to the active playing element
-        if (!codeReader) {
-          codeReader = new ZXing.BrowserMultiFormatReader();
+  toggleBtn.addEventListener('click', async () => {
+    if (isScanning) {
+      stopScanner();
+    } else {
+      await startScanner();
+    }
+  });
+
+  async function startScanner() {
+    if (errorBox) errorBox.classList.add('hidden');
+
+    try {
+      const constraints = {
+        audio: false,
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
         }
-
-        codeReader.decodeFromVideoElement(videoEl, (result, err) => {
-          if (result) {
-            stopScanner();
-            fetchAndAnalyze(result.getText());
-          }
-        });
-
-      } catch (err) {
-        console.error("Camera failure:", err);
-        stopScanner();
-        statusLabel.innerText = "Error";
-        errorBox.classList.remove('hidden');
-        errorBox.innerText = `Camera Error: ${err.name} - ${err.message}. Please verify camera permissions in your browser.`;
-      }
-    }
-
-    function stopScanner() {
-      if (codeReader) {
-        try { codeReader.reset(); } catch (e) {}
-      }
-
-      if (localStream) {
-        localStream.getTracks().forEach(track => track.stop());
-        localStream = null;
-      }
-
-      videoEl.srcObject = null;
-      isScanning = false;
-      reticle.classList.add('hidden');
-      toggleBtn.innerText = "Start Camera";
-      statusLabel.innerText = "Ready";
-    }
-
-    manualBtn.addEventListener('click', () => {
-      const code = manualInput.value.trim();
-      if (code) fetchAndAnalyze(code);
-    });
-
-    async function fetchAndAnalyze(barcode) {
-      currentBarcode = barcode;
-      statusLabel.innerText = "Checking...";
-
-      const localData = localStorage.getItem(`food_${barcode}`);
-      if (localData) {
-        renderAnalysis(JSON.parse(localData));
-        statusLabel.innerText = "Local Database";
-        return;
-      }
-
-      try {
-        const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
-        const data = await res.json();
-
-        if (data.status === 1 && data.product) {
-          const product = {
-            name: data.product.product_name || "Unknown Product",
-            brand: data.product.brands || "Unknown Brand",
-            ingredients: data.product.ingredients_text || "",
-            sugar100g: data.product.nutriments?.sugars_100g || 0,
-            satFat100g: data.product.nutriments?.['saturated-fat_100g'] || 0
-          };
-          renderAnalysis(product);
-          statusLabel.innerText = "OFF Database";
-        } else {
-          promptEnrichment(barcode);
-        }
-      } catch (e) {
-        promptEnrichment(barcode);
-      }
-    }
-
-    function renderAnalysis(item) {
-      document.getElementById('enrichment-card').classList.add('hidden');
-      document.getElementById('product-card').classList.remove('hidden');
-
-      document.getElementById('product-name').innerText = item.name;
-      document.getElementById('product-brand').innerText = item.brand;
-      document.getElementById('ingredients-raw').innerText = item.ingredients || "No ingredients listed.";
-
-      const text = (item.ingredients || "").toLowerCase();
-      const sugar = Number(item.sugar100g) || 0;
-      const satFat = Number(item.satFat100g) || 0;
-
-      const findMatches = (arr) => arr.filter(term => text.includes(term));
-      const cMatches = findMatches(CRITERIA.carcinogens);
-      const sMatches = findMatches(CRITERIA.seedOils);
-      const dyeMatches = findMatches(CRITERIA.artificialColors);
-      const emMatches = findMatches(CRITERIA.emulsifiers);
-      const swMatches = findMatches(CRITERIA.sweeteners);
-      const chMatches = findMatches(CRITERIA.cholesterolRisks);
-
-      const isHighSugar = sugar > 10;
-      const isHighSatFat = satFat > 4 || chMatches.length > 0;
-
-      const rows = [
-        { name: "Carcinogenic Additives", bad: cMatches.length > 0, info: cMatches.join(", ") },
-        { name: "Industrial Seed Oils", bad: sMatches.length > 0, info: sMatches.join(", ") },
-        { name: "Artificial Colors", bad: dyeMatches.length > 0, info: dyeMatches.join(", ") },
-        { name: "Sugar Level", bad: isHighSugar, info: `${sugar}g / 100g ${isHighSugar ? '(High Sugar)' : '(Acceptable)'}` },
-        { name: "Cholesterol / Trans Fat", bad: isHighSatFat, info: `${satFat}g sat fat ${chMatches.length ? '(' + chMatches.join(', ') + ')' : ''}` },
-        { name: "Gut Emulsifiers", bad: emMatches.length > 0, info: emMatches.join(", ") },
-        { name: "Synthetic Sweeteners", bad: swMatches.length > 0, info: swMatches.join(", ") }
-      ];
-
-      const tbody = document.getElementById('evaluation-table-body');
-      tbody.innerHTML = rows.map(r => `
-        <tr class="hover:bg-slate-800/40">
-          <td class="p-2 text-slate-200 font-medium">${r.name}</td>
-          <td class="p-2 text-center text-sm">${r.bad ? '🔴' : '🟢'}</td>
-          <td class="p-2 text-slate-400 capitalize text-[11px]">${r.bad ? r.info : 'None detected'}</td>
-        </tr>
-      `).join('');
-    }
-
-    function promptEnrichment(barcode) {
-      statusLabel.innerText = "Not in Catalog";
-      document.getElementById('product-card').classList.add('hidden');
-      const enrichCard = document.getElementById('enrichment-card');
-      enrichCard.classList.remove('hidden');
-
-      document.getElementById('enrich-name').value = '';
-      document.getElementById('enrich-brand').value = '';
-      document.getElementById('enrich-ingredients').value = '';
-      document.getElementById('enrich-sugar').value = '';
-      document.getElementById('enrich-satfat').value = '';
-    }
-
-    document.getElementById('btn-save-enrichment').addEventListener('click', () => {
-      if (!currentBarcode) return;
-      const enrichedProduct = {
-        name: document.getElementById('enrich-name').value || "Custom Item",
-        brand: document.getElementById('enrich-brand').value || "Custom Brand",
-        ingredients: document.getElementById('enrich-ingredients').value || "",
-        sugar100g: document.getElementById('enrich-sugar').value || 0,
-        satFat100g: document.getElementById('enrich-satfat').value || 0
       };
 
-      localStorage.setItem(`food_${currentBarcode}`, JSON.stringify(enrichedProduct));
-      renderAnalysis(enrichedProduct);
-      statusLabel.innerText = "Saved to Device";
-    });
+      localStream = await navigator.mediaDevices.getUserMedia(constraints);
+      videoEl.srcObject = localStream;
+      await videoEl.play();
 
-    document.getElementById('btn-cancel-enrichment').addEventListener('click', () => {
-      document.getElementById('enrichment-card').classList.add('hidden');
-      statusLabel.innerText = "Ready";
-    });
+      toggleBtn.innerText = "Stop Camera";
+      reticle.classList.remove('hidden');
+      isScanning = true;
 
-    document.getElementById('btn-edit-product').addEventListener('click', () => {
-      promptEnrichment(currentBarcode);
-    });
-  </script>
+      // Continuous loop: inspects every incoming frame until a barcode matches
+      codeReader.decodeFromStream(localStream, videoEl, (result, err) => {
+        if (result) {
+          const barcode = result.getText ? result.getText() : result.text;
+          stopScanner();
+          fetchAndAnalyze(barcode);
+        }
+      });
+
+    } catch (err) {
+      console.error("Camera failure:", err);
+      stopScanner();
+      if (errorBox) {
+        errorBox.classList.remove('hidden');
+        errorBox.innerText = `Camera Error: ${err.name} - ${err.message}`;
+      }
+    }
+  }
+
+  function stopScanner() {
+    if (codeReader) {
+      try { codeReader.reset(); } catch (e) {}
+    }
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.stop());
+      localStream = null;
+    }
+    videoEl.srcObject = null;
+    isScanning = false;
+    reticle.classList.add('hidden');
+    toggleBtn.innerText = "Start Camera";
+  }
+
+  manualBtn.addEventListener('click', () => {
+    const code = manualInput.value.trim();
+    if (code) fetchAndAnalyze(code);
+  });
+
+  async function fetchAndAnalyze(barcode) {
+    currentBarcode = barcode;
+
+    // 1. Check local persistent storage
+    const localData = localStorage.getItem(`food_${barcode}`);
+    if (localData) {
+      renderAnalysis(JSON.parse(localData));
+      return;
+    }
+
+    // 2. Fetch from Open Food Facts
+    try {
+      const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
+      const data = await res.json();
+
+      if (data.status === 1 && data.product) {
+        const product = {
+          name: data.product.product_name || "Unknown Product",
+          brand: data.product.brands || "Unknown Brand",
+          ingredients: data.product.ingredients_text || "",
+          sugar100g: data.product.nutriments?.sugars_100g || 0,
+          satFat100g: data.product.nutriments?.['saturated-fat_100g'] || 0
+        };
+        renderAnalysis(product);
+      } else {
+        promptEnrichment(barcode);
+      }
+    } catch (e) {
+      promptEnrichment(barcode);
+    }
+  }
+
+  function renderAnalysis(item) {
+    document.getElementById('enrichment-card').classList.add('hidden');
+    document.getElementById('product-card').classList.remove('hidden');
+
+    document.getElementById('product-name').innerText = item.name;
+    document.getElementById('product-brand').innerText = item.brand;
+    document.getElementById('ingredients-raw').innerText = item.ingredients || "No ingredients listed.";
+
+    const text = (item.ingredients || "").toLowerCase();
+    const sugar = Number(item.sugar100g) || 0;
+    const satFat = Number(item.satFat100g) || 0;
+
+    const findMatches = (arr) => arr.filter(term => text.includes(term));
+    const cMatches = findMatches(CRITERIA.carcinogens);
+    const sMatches = findMatches(CRITERIA.seedOils);
+    const dyeMatches = findMatches(CRITERIA.artificialColors);
+    const emMatches = findMatches(CRITERIA.emulsifiers);
+    const swMatches = findMatches(CRITERIA.sweeteners);
+    const chMatches = findMatches(CRITERIA.cholesterolRisks);
+
+    const isHighSugar = sugar > 10;
+    const isHighSatFat = satFat > 4 || chMatches.length > 0;
+
+    const rows = [
+      { name: "Carcinogenic Additives", bad: cMatches.length > 0, info: cMatches.join(", ") },
+      { name: "Industrial Seed Oils", bad: sMatches.length > 0, info: sMatches.join(", ") },
+      { name: "Artificial Colors", bad: dyeMatches.length > 0, info: dyeMatches.join(", ") },
+      { name: "Sugar Level", bad: isHighSugar, info: `${sugar}g / 100g ${isHighSugar ? '(High Sugar)' : '(Acceptable)'}` },
+      { name: "Cholesterol / Trans Fat", bad: isHighSatFat, info: `${satFat}g sat fat ${chMatches.length ? '(' + chMatches.join(', ') + ')' : ''}` },
+      { name: "Gut Emulsifiers", bad: emMatches.length > 0, info: emMatches.join(", ") },
+      { name: "Synthetic Sweeteners", bad: swMatches.length > 0, info: swMatches.join(", ") }
+    ];
+
+    const tbody = document.getElementById('evaluation-table-body');
+    tbody.innerHTML = rows.map(r => `
+      <tr class="hover:bg-slate-800/40">
+        <td class="p-2 text-slate-200 font-medium">${r.name}</td>
+        <td class="p-2 text-center text-sm">${r.bad ? '🔴' : '🟢'}</td>
+        <td class="p-2 text-slate-400 capitalize text-[11px]">${r.bad ? r.info : 'None detected'}</td>
+      </tr>
+    `).join('');
+  }
+
+  function promptEnrichment(barcode) {
+    document.getElementById('product-card').classList.add('hidden');
+    const enrichCard = document.getElementById('enrichment-card');
+    enrichCard.classList.remove('hidden');
+
+    document.getElementById('enrich-name').value = '';
+    document.getElementById('enrich-brand').value = '';
+    document.getElementById('enrich-ingredients').value = '';
+    document.getElementById('enrich-sugar').value = '';
+    document.getElementById('enrich-satfat').value = '';
+  }
+
+  document.getElementById('btn-save-enrichment').addEventListener('click', () => {
+    if (!currentBarcode) return;
+    const enrichedProduct = {
+      name: document.getElementById('enrich-name').value || "Custom Item",
+      brand: document.getElementById('enrich-brand').value || "Custom Brand",
+      ingredients: document.getElementById('enrich-ingredients').value || "",
+      sugar100g: document.getElementById('enrich-sugar').value || 0,
+      satFat100g: document.getElementById('enrich-satfat').value || 0
+    };
+
+    localStorage.setItem(`food_${currentBarcode}`, JSON.stringify(enrichedProduct));
+    renderAnalysis(enrichedProduct);
+  });
+
+  document.getElementById('btn-cancel-enrichment').addEventListener('click', () => {
+    document.getElementById('enrichment-card').classList.add('hidden');
+  });
+
+  document.getElementById('btn-edit-product').addEventListener('click', () => {
+    promptEnrichment(currentBarcode);
+  });
+</script>
 </body>
 </html>
