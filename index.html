@@ -12,11 +12,15 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
 
-  <!-- Header -->
-  <header class="bg-slate-800/90 backdrop-blur border-b border-slate-700/80 px-4 py-3 flex items-center justify-between sticky top-0 z-30">
-    <div>
-      <h1 class="text-sm font-bold text-white tracking-wide">CleanLabel Scanner</h1>
-      <p class="text-[10px] text-slate-400">Grocery Store Ingredient Checker</p>
+ <!-- Header with App Icon -->
+  <header class="bg-slate-800/90 backdrop-blur border-b border-slate-700/80 px-4 py-2.5 flex items-center justify-between sticky top-0 z-30">
+    <div class="flex items-center space-x-2.5">
+      <!-- Badge Icon -->
+      <img src="icon.svg" alt="CleanLabel Logo" class="w-8 h-8 rounded-xl shadow border border-emerald-500/30 flex-shrink-0" />
+      <div>
+        <h1 class="text-sm font-bold text-white tracking-wide leading-tight">CleanLabel Scanner</h1>
+        <p class="text-[10px] text-slate-400 leading-tight">Costco & PCC Ingredient Checker</p>
+      </div>
     </div>
     <span id="scan-status" class="text-[11px] bg-slate-700 text-emerald-400 font-medium px-2.5 py-1 rounded-full border border-slate-600">Ready</span>
   </header>
